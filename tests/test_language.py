@@ -4,54 +4,68 @@ from __future__ import unicode_literals, print_function
 import unittest
 from flowgen import language
 from pypeg2 import parse, some
+from pypeg2.xmlast import thing2xml
 
-class InstructionTestCase(unittest.TestCase):
+
+class PEGMixin(unittest.TestCase):
+
+    def assertPEG(self, obj, cls, value=None):
+        self.assertIsInstance(obj, cls)
+        self.assertEqual(obj, value)
+
+    def assertConditionEqual(self, obj, name, condition):
+        self.assertIsInstance(obj, language.Condition)
+        self.assertEqual(obj.name, name)
+        self.assertEqual(obj.condition, condition)
+
+
+class InstructionTestCase(PEGMixin, unittest.TestCase):
+
     def _test_instructions(self, case, result):
         tree = parse(case, language.Instruction)
-        self.assertEqual(tree, result)
+        self.assertPEG(tree, language.Instruction, result)
 
     def test_instructions_parse(self):
         self._test_instructions('Welcome to code2flow;', 'Welcome to code2flow')
         self._test_instructions('Some text!;', 'Some text!')
 
-class ConditionTestCase(unittest.TestCase):
 
-    def _test_condition(self, case, condition, code):
-        tree = parse(case, language.Condition)
-        self.assertEqual(tree.condition, condition)
-        self.assertEqual(tree[0], code)
+class ConditionTestCase(PEGMixin, unittest.TestCase):
 
     def test_basic_while(self):
         tree = parse("""while (my_condition) {
                         instruction;
                      }""", language.Condition)
-        self.assertEqual(tree.name, 'while')
-        self.assertEqual(tree.condition, "my_condition")
-        self.assertEqual(tree[0], "instruction")
+        self.assertConditionEqual(tree, 'while', "my_condition")
+
+        self.assertPEG(tree[0], language.Instruction, "instruction")
 
     def test_basic_if(self):
         tree = parse("""if (example && aa) {
                         instruction;
                      }""", language.Condition)
-        self.assertEqual(tree.name, 'if')
-        self.assertEqual(tree.condition, "example && aa")
-        self.assertEqual(tree[0], "instruction")
+
+        self.assertConditionEqual(tree, 'if', "example && aa")
+
+        self.assertPEG(tree[0], language.Instruction, "instruction")
 
     def test_single_line_condition(self):
         tree = parse("if (cond) instruction;", language.Condition)
-        self.assertEqual(tree.name, 'if')
-        self.assertEqual(tree.condition, "cond")
-        self.assertEqual(tree[0], 'instruction')
+
+        self.assertConditionEqual(tree, 'if', "cond")
+
+        self.assertPEG(tree[0], language.Instruction, "instruction")
 
     def test_condition_with_multiline_comment(self):
         tree = parse("""if (my_condition) {
                                     code;
                         /* XXX */
                      }""", language.Condition)
-        self.assertEqual(tree.name, 'if')
-        self.assertEqual(tree.condition, "my_condition")
-        self.assertEqual(tree[0], "code")
-        self.assertEqual(tree[1], "/* XXX */")
+
+        self.assertConditionEqual(tree, 'if', "my_condition")
+
+        self.assertPEG(tree[0], language.Instruction, "code")
+        self.assertPEG(tree[1], language.Comment, "/* XXX */")
 
     def test_condition_with_multiline_comment_in_multi_lines(self):
         tree = parse("""if (my_condition) {
@@ -60,56 +74,44 @@ class ConditionTestCase(unittest.TestCase):
                         xxx
                         */
                      }""", language.Condition)
-        self.assertEqual(tree.name, 'if')
-        self.assertEqual(tree.condition, "my_condition")
-        self.assertEqual(tree[0], "code")
-        self.assertEqual(tree[1], """/* XXX
+
+        self.assertConditionEqual(tree, 'if', "my_condition")
+
+        self.assertPEG(tree[0], language.Instruction, "code")
+        self.assertPEG(tree[1], language.Comment, """/* XXX
                         xxx
                         */""")
 
-    def test_condition_with_end_line_comment(self):
-        tree = parse("""if (my_condition) {
-                                    code;
-                     }; // simple comment""", language.Condition)
-        self.assertEqual(tree[0], 'code')
-        self.assertEqual(tree[1], 'simple comment')
-
-    def test_condition_with_multiple_end_line_comments(self):
-        tree = parse("""if (my_condition) {
-                                    code;
-                     }; // simple comment
-                      // second comment
-                     """, language.Condition)
-        self.assertEqual(tree[1], 'simple comment')
-        self.assertEqual(tree[2], 'second comment')
-
     def test_nested_condition(self):
         tree = parse("""if(my_condition) {
-                        if(nested) {
+                        while(nested) {
                             code;
                         }
-                    }
-                    """, language.Condition)
-        self.assertEqual(tree.condition, "my_condition")
-        self.assertEqual(tree[0].condition, "nested")
+                    }""", language.Condition)
+
+        self.assertConditionEqual(tree, 'if', "my_condition")
+
+        self.assertConditionEqual(tree[0], 'while', "nested")
+
         self.assertEqual(tree[0][0], "code")
 
 
-class CommentUnitTestCase(unittest.TestCase):
+class CommentUnitTestCase(PEGMixin, unittest.TestCase):
 
     def test_plain_multiline_comment(self):
         tree = parse("""/* foo
                     bar */
                     """, language.Comment)
-        self.assertEqual(tree, """/* foo
+
+        self.assertPEG(tree, language.Comment, """/* foo
                     bar */""")
 
     def test_plain_end_line_comment(self):
         tree = parse("""// foo""", language.Comment)
-        self.assertEqual(tree, "foo")
+        self.assertPEG(tree, language.Comment, "foo")
 
 
-class CodeUnitTestCase(unittest.TestCase):
+class CodeUnitTestCase(PEGMixin, unittest.TestCase):
     heading = """Welcome to code2flow;
     """
     condition = """if(In doubt?) {
@@ -144,5 +146,29 @@ class CodeUnitTestCase(unittest.TestCase):
     def test_ignore_condition_in_comment(self):
         tree = parse("""// foo if(cond) instruction;
             // bar""", language.Code)
-        self.assertEqual(tree[0], "foo if(cond) instruction;")
-        self.assertEqual(tree[1], "bar")
+        self.assertPEG(tree[0], language.Comment, "foo if(cond) instruction;")
+        self.assertPEG(tree[1], language.Comment, "bar")
+
+    def test_condition_with_end_line_comment(self):
+        tree = parse("""if (my_condition) {
+                                    code;
+                     };// simple comment""", language.Code)
+
+        self.assertConditionEqual(tree[0], 'if', "my_condition")
+
+        self.assertPEG(tree[0][0], language.Instruction, 'code')
+
+        self.assertPEG(tree[1], language.Comment, 'simple comment')
+
+    def test_condition_with_multiple_end_line_comments(self):
+        tree = parse("""if (my_condition) {
+                                    code;
+                     }; // simple comment
+                      // second comment
+                     """, language.Code)
+
+        self.assertConditionEqual(tree[0], 'if', 'my_condition')
+
+        self.assertPEG(tree[1], language.Comment, 'simple comment')
+
+        self.assertPEG(tree[2], language.Comment, 'second comment')

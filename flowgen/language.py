@@ -32,7 +32,7 @@ class Condition(List):
 
 block = "{", maybe_some([Instruction, Comment, Condition]), "}", maybe_some(';')
 Condition.grammar = attr("name", ConditionType), '(', attr("condition", super_word), ")",\
-            [block, Instruction], maybe_some(Comment)
+            [block, Instruction]
 
 
 class Code(List):
