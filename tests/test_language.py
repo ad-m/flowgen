@@ -5,9 +5,7 @@ import unittest
 from flowgen import language
 from pypeg2 import parse, some
 
-
-class TestLanguage(unittest.TestCase):
-
+class InstructionTestCase(unittest.TestCase):
     def _test_instructions(self, case, result):
         tree = parse(case, language.Instruction)
         self.assertEqual(tree, result)
@@ -15,6 +13,8 @@ class TestLanguage(unittest.TestCase):
     def test_instructions_parse(self):
         self._test_instructions('Welcome to code2flow;', 'Welcome to code2flow')
         self._test_instructions('Some text!;', 'Some text!')
+
+class ConditionTestCase(unittest.TestCase):
 
     def _test_condition(self, case, condition, code):
         tree = parse(case, language.Condition)
@@ -72,7 +72,7 @@ class TestLanguage(unittest.TestCase):
                                     code;
                      }; // simple comment""", language.Condition)
         self.assertEqual(tree[0], 'code')
-        self.assertEqual(tree[1], '// simple comment')
+        self.assertEqual(tree[1], 'simple comment')
 
     def test_condition_with_multiple_end_line_comments(self):
         tree = parse("""if (my_condition) {
@@ -94,6 +94,9 @@ class TestLanguage(unittest.TestCase):
         self.assertEqual(tree[0].condition, "nested")
         self.assertEqual(tree[0][0], "code")
 
+
+class CommentUnitTestCase(unittest.TestCase):
+
     def test_plain_multiline_comment(self):
         tree = parse("""/* foo
                     bar */
@@ -105,14 +108,8 @@ class TestLanguage(unittest.TestCase):
         tree = parse("""// foo""", language.Comment)
         self.assertEqual(tree, "foo")
 
-    def test_multiple_end_line_comment(self):
-        tree = parse("""// foo
-            // bar""", some(language.Comment))
-        self.assertEqual(tree[0], "foo")
-        self.assertEqual(tree[1], "bar")
 
-
-class ExampleTestLanguage(TestLanguage):
+class CodeUnitTestCase(unittest.TestCase):
     heading = """Welcome to code2flow;
     """
     condition = """if(In doubt?) {
@@ -143,3 +140,9 @@ class ExampleTestLanguage(TestLanguage):
 
     def test_concat(self):
         parse(self.heading + self.condition + self.comment + self.footer, language.Code)
+
+    def test_ignore_condition_in_comment(self):
+        tree = parse("""// foo if(cond) instruction;
+            // bar""", language.Code)
+        self.assertEqual(tree[0], "foo if(cond) instruction;")
+        self.assertEqual(tree[1], "bar")
