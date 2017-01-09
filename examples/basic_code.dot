@@ -1,0 +1,22 @@
+digraph {
+	start [label=START]
+	end [label=END]
+	"Hello Smith" [label="Hello Smith" color=red]
+	"Ask Smith about coffee" [label="Ask Smith about coffee" color=red]
+	"Condition(['Make coffee', 'Warning, it might be hot!'], name=ConditionType('if'))" [label="Smith want coffee" color=blue]
+	"Make coffee" [label="Make coffee" color=red]
+	"Warning, it might be hot!" [label="Warning, it might be hot!" color=gray]
+	"Be nice" [label="Be nice" color=gray]
+	"Let's party!" [label="Let's party!" color=red]
+	"Good night Smith!" [label="Good night Smith!" color=red]
+		start -> "Hello Smith"
+		"Hello Smith" -> "Ask Smith about coffee"
+		"Ask Smith about coffee" -> "Condition(['Make coffee', 'Warning, it might be hot!'], name=ConditionType('if'))"
+		"Condition(['Make coffee', 'Warning, it might be hot!'], name=ConditionType('if'))" -> "Let's party!" [label=False]
+		"Condition(['Make coffee', 'Warning, it might be hot!'], name=ConditionType('if'))" -> "Make coffee" [label=True]
+		"Make coffee" -> "Let's party!"
+		"Warning, it might be hot!" -> "Make coffee" [label=Comment]
+		"Be nice" -> "Make coffee" [label=Comment]
+		"Let's party!" -> "Good night Smith!"
+		"Good night Smith!" -> end
+}
