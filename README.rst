@@ -28,7 +28,29 @@ code to flowchart converter.
 Features
 --------
 
-* TODO
+* draw flowchart from pseudocode
+
+Example
+--------
+
+It's simple to draw diagram based on simple pseudocode like::
+
+    Hello Smith;
+    Ask Smith about coffee;
+    if(Smith want coffee){
+        Make coffee;
+        // Warning, it might be hot!
+    }
+    // Be nice
+    Let's party!;
+    Good night Smith!;
+
+It was rendered as:
+
+.. image:: https://raw.githubusercontent.com/ad-m/flowgen/master/examples/basic_code.png
+     :alt: Rendered diagram
+
+
 
 Credits
 ---------
