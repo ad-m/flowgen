@@ -3,7 +3,7 @@ import re
 
 from pypeg2 import *
 
-super_word = re.compile('([\w0-9 +\?!&]+)')
+super_word = re.compile('([\w0-9 +\?!&\']+)')
 
 
 class MultiLineComment(str):
@@ -19,7 +19,7 @@ class Comment(str):
 
 
 class Instruction(str):
-    grammar = super_word, some(";")
+    grammar = super_word, some([";", "\n"])
 
 
 class ConditionType(Keyword):
