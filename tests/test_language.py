@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function
+from __future__ import print_function, unicode_literals
+
+import os
 import unittest
+from glob import glob
+
 from flowgen import language
 from pypeg2 import parse, some
-from pypeg2.xmlast import thing2xml
 
 
 class PEGMixin(unittest.TestCase):
@@ -175,3 +178,13 @@ class CodeUnitTestCase(PEGMixin, unittest.TestCase):
 
     def test_empty_string(self):
         parse("", language.Code)
+
+    def _get_root_dir(self):
+        return os.path.join(os.path.dirname(__file__), '..')
+
+    def test_parse_examples(self):
+        path = os.path.join(self._get_root_dir(), 'examples', '*.txt')
+        files = glob(path)
+        for file in files:
+            with open(file, 'r') as fp:
+                parse(fp.read(), language.Code)
