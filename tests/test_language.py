@@ -3,7 +3,7 @@
 from __future__ import unicode_literals, print_function
 import unittest
 from flowgen import language
-from pypeg2 import parse
+from pypeg2 import parse, some
 
 
 class TestLanguage(unittest.TestCase):
@@ -53,14 +53,28 @@ class TestLanguage(unittest.TestCase):
         self.assertEqual(tree[0], "code")
         self.assertEqual(tree[1], "/* XXX */")
 
+    def test_condition_with_multiline_comment_in_multi_lines(self):
+        tree = parse("""if (my_condition) {
+                                    code;
+                        /* XXX
+                        xxx
+                        */
+                     }""", language.Condition)
+        self.assertEqual(tree.name, 'if')
+        self.assertEqual(tree.condition, "my_condition")
+        self.assertEqual(tree[0], "code")
+        self.assertEqual(tree[1], """/* XXX
+                        xxx
+                        */""")
+
     def test_condition_with_end_line_comment(self):
         tree = parse("""if (my_condition) {
                                     code;
                      }; // simple comment""", language.Condition)
         self.assertEqual(tree[0], 'code')
-        self.assertEqual(tree[1], 'simple comment')
+        self.assertEqual(tree[1], '// simple comment')
 
-    def test_condition_with_multiple_comments(self):
+    def test_condition_with_multiple_end_line_comments(self):
         tree = parse("""if (my_condition) {
                                     code;
                      }; // simple comment
@@ -80,6 +94,23 @@ class TestLanguage(unittest.TestCase):
         self.assertEqual(tree[0].condition, "nested")
         self.assertEqual(tree[0][0], "code")
 
+    def test_plain_multiline_comment(self):
+        tree = parse("""/* foo
+                    bar */
+                    """, language.Comment)
+        self.assertEqual(tree, """/* foo
+                    bar */""")
+
+    def test_plain_end_line_comment(self):
+        tree = parse("""// foo""", language.Comment)
+        self.assertEqual(tree, "foo")
+
+    def test_multiple_end_line_comment(self):
+        tree = parse("""// foo
+            // bar""", some(language.Comment))
+        self.assertEqual(tree[0], "foo")
+        self.assertEqual(tree[1], "bar")
+
 
 class ExampleTestLanguage(TestLanguage):
     heading = """Welcome to code2flow;
@@ -90,25 +121,25 @@ class ExampleTestLanguage(TestLanguage):
         Read help;
     }
     """
-    comment = """// the preview updates
-                // as you write"""
+    comment = """//the preview updates
+                //as you write"""
     footer = "Improve your workflow!;"""
 
     def test_heading(self):
-        parse(self.heading, language.Instruction)
+        parse(self.heading, some(language.Instruction))
         parse(self.heading, language.Code)
 
     def test_condition(self):
-        parse(self.condition, language.Condition)
+        parse(self.condition, some(language.Condition))
         parse(self.condition, language.Code)
 
-    # def test_comment(self):
-    #     parse(self.comment, language.Comment)
-    #     parse(self.comment, language.Code)
+    def test_comment(self):
+        parse(self.comment, some(language.Comment))
+        parse(self.comment, language.Code)
 
     def test_footer(self):
-        parse(self.footer, language.Instruction)
+        parse(self.footer, some(language.Instruction))
         parse(self.footer, language.Code)
 
-    # def test_concat(self):
-    #     parse(self.heading + self.condition + self.comment + self.footer, language.Code)
+    def test_concat(self):
+        parse(self.heading + self.condition + self.comment + self.footer, language.Code)

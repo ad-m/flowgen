@@ -6,19 +6,20 @@ from pypeg2 import *
 super_word = re.compile('([\w0-9 +\?!&]+)')
 
 
-MultiLineComment = comment_c
+class MultiLineComment(str):
+    grammar = comment_c
 
 
 class EndLineComment(str):
-    grammar = "//", re.compile('.*')
+    grammar = "//", restline, endl
 
 
 class Comment(str):
-    grammar = [EndLineComment, comment_c]
+    grammar = [EndLineComment, MultiLineComment]
 
 
 class Instruction(str):
-    grammar = super_word, ";"
+    grammar = super_word, some(";")
 
 
 class ConditionType(Keyword):
@@ -35,4 +36,4 @@ Condition.grammar = attr("name", ConditionType), '(', attr("condition", super_wo
 
 
 class Code(List):
-    grammar = [Instruction, Condition, MultiLineComment]
+    grammar = some([Instruction, Condition, Comment])
