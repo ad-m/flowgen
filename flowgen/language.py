@@ -36,4 +36,4 @@ Condition.grammar = attr("name", ConditionType), '(', attr("condition", super_wo
 
 
 class Code(List):
-    grammar = some([Instruction, Condition, Comment])
+    grammar = maybe_some([Instruction, Condition, Comment])

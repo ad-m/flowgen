@@ -172,3 +172,6 @@ class CodeUnitTestCase(PEGMixin, unittest.TestCase):
         self.assertPEG(tree[1], language.Comment, 'simple comment')
 
         self.assertPEG(tree[2], language.Comment, 'second comment')
+
+    def test_empty_string(self):
+        parse("", language.Code)
