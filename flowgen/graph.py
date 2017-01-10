@@ -25,18 +25,9 @@ class Graph(object):
         self.traverse_edges(tree)
 
     def traverse_list(self, node, parent=None):
-        if isinstance(node, Code):
-            for el in node:
-                self.traverse_list(el, node)
-        elif isinstance(node, Instruction):
+        if not isinstance(node, Code):
             self.nodes.append(node)
-            self.dot.node(str(node), label=str(node), color="red")
-        elif isinstance(node, Comment):
-            self.nodes.append(node)
-            self.dot.node(str(node), label=str(node), color="gray")
-        elif isinstance(node, Condition):
-            self.nodes.append(node)
-            self.dot.node(str(node), label=node.condition, color="blue")
+        if isinstance(node, (Code, Condition)):
             for el in node:
                 self.traverse_list(el, node)
 
@@ -52,12 +43,18 @@ class Graph(object):
             for el in node:
                 self.traverse_edges(el, node)
         elif isinstance(node, Instruction):
+            self.dot.node(str(node), label=str(node), color="red")
+
             n = self.find_next(node, (Instruction, Condition))
             self.add_edge(node, n)
         elif isinstance(node, Comment):
+            self.dot.node(str(node), label=str(node), color="gray")
+
             prev = self.find_prev(node, (Instruction, Condition))
             self.add_edge(node, prev, label="Comment")
         elif isinstance(node, Condition):
+            self.dot.node(str(node), label=node.condition, color="blue")
+
             n = self.find_next(node, (Instruction, Condition), exclude_child=True)
             self.add_edge(node, n, label="False")
 
