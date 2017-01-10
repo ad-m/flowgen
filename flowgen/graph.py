@@ -4,10 +4,14 @@ from flowgen.language import Code, Comment, Condition, Instruction
 from graphviz import Digraph
 
 
+def is_iterable(node):
+    return isinstance(node, (Condition, Code))
+
+
 def contains(needle, haystack):
     if needle == haystack:
         return True
-    if isinstance(haystack, (Condition, Code)):
+    if is_iterable(haystack):
         return any(contains(needle, x) for x in haystack)
     return False
 
@@ -17,8 +21,8 @@ class Graph(object):
     def __init__(self, tree):
         self.dot = Digraph()
         self.tree = tree
-        self.dot.node('start', "START")
-        self.dot.node('end', "END")
+        self.dot.node('start', "START", shape="oval")
+        self.dot.node('end', "END", shape="oval")
         self.nodes = []
         self.traverse_list(tree)
         self.add_edge('start', self.nodes[0])
@@ -27,7 +31,7 @@ class Graph(object):
     def traverse_list(self, node, parent=None):
         if not isinstance(node, Code):
             self.nodes.append(node)
-        if isinstance(node, (Code, Condition)):
+        if is_iterable(node):
             for el in node:
                 self.traverse_list(el, node)
 
@@ -43,22 +47,25 @@ class Graph(object):
             for el in node:
                 self.traverse_edges(el, node)
         elif isinstance(node, Instruction):
-            self.dot.node(str(node), label=str(node), color="red")
+            self.dot.node(str(node), label=str(node), shape="box")
 
             n = self.find_next(node, (Instruction, Condition))
             self.add_edge(node, n)
         elif isinstance(node, Comment):
-            self.dot.node(str(node), label=str(node), color="gray")
+            self.dot.node(str(node), label=str(node),
+                          shape="box",
+                          style="filled",
+                          fillcolor="gray")
 
             prev = self.find_prev(node, (Instruction, Condition))
-            self.add_edge(node, prev, label="Comment")
+            self.add_edge(node, prev, style="dashed")
         elif isinstance(node, Condition):
-            self.dot.node(str(node), label=node.condition, color="blue")
+            self.dot.node(str(node), label=node.condition, shape="diamond")
 
             n = self.find_next(node, (Instruction, Condition), exclude_child=True)
-            self.add_edge(node, n, label="False")
+            self.add_edge(node, n, label="False", color="red")
 
-            self.add_edge(node, node[0], label="True")
+            self.add_edge(node, node[0], label="True", color="green")
 
             for el in node:
                 self.traverse_edges(el, node)
