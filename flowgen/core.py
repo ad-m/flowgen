@@ -8,6 +8,7 @@ from pypeg2.xmlast import thing2xml
 
 
 class FlowGen(object):
+
     def __init__(self, args):
         self.args = parser.parse_args(args)
 
@@ -25,6 +26,8 @@ class FlowGen(object):
             print(thing2xml(tree, pretty=True).decode())
 
         graph = Graph(tree)
+
+        graph.render()
 
         if self.args.dump_source:
             print(graph.get_source())
