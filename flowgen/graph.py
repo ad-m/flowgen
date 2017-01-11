@@ -49,10 +49,10 @@ class GraphStyle(object):
         return dict(label=node.condition, shape="diamond")
 
     def condition_true_edge(self, tail, head):
-        return dict(label="False", color="red")
+        return dict(label="True", color="green")
 
     def condition_false_edge(self, tail, head):
-        return dict(label="True", color="green")
+        return dict(label="False", color="red")
 
     def get_for_edge(self, name, tail, head):
         return getattr(self, "%s_edge" % (name))(tail, head)
